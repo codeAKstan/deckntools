@@ -114,7 +114,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <section className="relative h-96 md:h-[500px] overflow-hidden">
+      <section className="relative h-96 md:h-[450px] overflow-hidden">
         {heroSlides.map((slide, index) => (
           <div
             key={slide.id}
@@ -122,7 +122,7 @@ export default function Home() {
               index === currentSlide ? "opacity-100" : "opacity-0"
             }`}
           >
-            <img src={slide.image || "/placeholder.svg"} alt={slide.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-contain bg-center" style={{ backgroundImage: `url(${slide.image || "/placeholder.svg"})` }} aria-label={slide.title} role="img" />
             <div className="absolute inset-0 bg-black/40" />
 
             <div className="absolute inset-0 flex flex-col justify-center items-start px-6 md:px-12 lg:px-20">
@@ -248,6 +248,82 @@ export default function Home() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+         {/* Product Categories Section */}
+      <section className="py-16 md:py-24 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="text-foreground">ALL</span>
+              </h2>
+              <h3 className="text-4xl md:text-5xl font-bold text-secondary mb-8">PRODUCT CATEGORIES</h3>
+              <Link href="/products">
+                <Button
+                  variant="outline"
+                  className="border-accent text-accent hover:bg-accent/10 px-8 py-6 text-lg bg-transparent"
+                >
+                  SEE ALL
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { name: "Decking Supplies", image: "/composite-decking-boards.jpg" },
+                { name: "Timber Cladding", image: "/wooden-joists-beams.jpg" },
+                { name: "Garden Features", image: "/beautiful-wooden-deck-construction.jpg" },
+                { name: "Garden Fencing", image: "/stainless-steel-fasteners.jpg" },
+                { name: "Oak Beams and Boards", image: "/circular-saw-power-tool.jpg" },
+                { name: "Building Materials", image: "/composite-decking-boards.jpg" },
+              ].map((category, index) => (
+                <div key={index} className="relative h-48 md:h-56 rounded-lg overflow-hidden group cursor-pointer">
+                  <img
+                    src={category.image || "/placeholder.svg"}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors" />
+                  <div className="absolute inset-0 flex items-end justify-center p-4">
+                    <h4 className="text-white font-semibold text-center text-sm md:text-base">{category.name}</h4>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Custom Cut Timber Banner */}
+      <section className="relative py-8 md:py-16 overflow-hidden">
+        <img
+          src="/wood1.jpg"
+          alt="Custom cut timber"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+         <div
+          className="absolute inset-y-0 right-0 w-1/2"
+          style={{ clipPath: "polygon(60% 0, 100% 0, 100% 100%, 40% 100%)", backgroundColor: "rgba(255,255,255,0.15)" }}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-2 text-white">
+                <span className="block">CUSTOM CUT</span>
+                <span className="block text-accent">TIMBER</span>
+              </h2>
+              <p className="text-lg md:text-xl text-white/90 mb-6">Cut to specific sizes, just for you</p>
+              <Link href="/custom-kits">
+                <Button size="lg" className="bg-accent text-white hover:bg-accent/90">
+                  SHOP NOW
+                </Button>
+              </Link>
+            </div>
+            <div className="hidden md:block" />
           </div>
         </div>
       </section>

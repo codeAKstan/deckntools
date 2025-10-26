@@ -96,7 +96,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-primary-foreground/20 pt-8 text-center text-sm opacity-90">
-          <p>&copy; 2025 DeckMaterials. All rights reserved.</p>
+          <p>&copy; 2025 DecknTools. All rights reserved.</p>
         </div>
       </div>
     </footer>
