@@ -1,14 +1,17 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Mail, Phone, MapPin } from "lucide-react"
 
 export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="font-bold text-lg mb-4">DeckMaterials</h3>
+            <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.svg" alt="DeckN Tools logo" width={164} height={164} priority />
+          </Link>
             <p className="opacity-90 text-sm">
               Your trusted source for premium decking materials and professional tools.
             </p>
@@ -17,7 +20,7 @@ export function Footer() {
           {/* Quick Links */}
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="grid grid-cols-2 gap-2 text-sm">
               <li>
                 <Link href="/products" className="hover:opacity-80 transition">
                   Products
@@ -44,7 +47,7 @@ export function Footer() {
           {/* Support */}
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="grid grid-cols-2 gap-2 text-sm">
               <li>
                 <Link href="/shipping" className="hover:opacity-80 transition">
                   Shipping Info
@@ -80,14 +83,14 @@ export function Footer() {
                 <Mail className="w-4 h-4" />
                 <span>info@deckmaterials.co.uk</span>
               </li>
-              <li className="flex items-start gap-2">
+              {/* <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 mt-1" />
                 <span>
                   123 Trade Street
                   <br />
                   London, UK
                 </span>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>
