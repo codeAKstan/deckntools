@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import { Button } from "@/components/ui/button"
@@ -14,23 +14,33 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [localError, setLocalError] = useState("")
   const router = useRouter()
   const login = useAdminAuth((state) => state.login)
+  const isLoading = useAdminAuth((state) => state.isLoading)
+  const error = useAdminAuth((state) => state.error)
+  const isAuthenticated = useAdminAuth((state) => state.isAuthenticated)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/admin/dashboard")
+    }
+  }, [isAuthenticated, router])
+
+  useEffect(() => {
+    if (error) {
+      setLocalError(error)
+    }
+  }, [error])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    setIsLoading(true)
-
-    if (login(email, password)) {
+    setLocalError("")
+    
+    const success = await login(email, password)
+    if (success) {
       router.push("/admin/dashboard")
-    } else {
-      setError("Invalid email or password. Demo: admin@decking.com / admin123")
     }
-
-    setIsLoading(false)
   }
 
   return (
@@ -42,10 +52,10 @@ export default function AdminLoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {localError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{localError}</AlertDescription>
               </Alert>
             )}
 
@@ -56,7 +66,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@decking.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -82,9 +92,7 @@ export default function AdminLoginPage() {
             </Button>
 
             <div className="text-xs text-muted-foreground text-center pt-2">
-              <p>Demo Credentials:</p>
-              <p>Email: admin@decking.com</p>
-              <p>Password: admin123</p>
+              <p>No admin account? Use the terminal to create one.</p>
             </div>
           </form>
         </CardContent>
