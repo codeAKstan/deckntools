@@ -74,21 +74,21 @@ const showcaseCards = [
     title: "CUSTOM",
     subtitle: "CUTTING",
     image: "/composite-decking-boards.jpg",
-    badge: "OFFER ENDS MIDNIGHT 27TH OCTOBER",
+    badge: "OFFER ENDS MIDNIGHT ",
   },
   {
     id: 2,
     title: "DOORS AND",
     subtitle: "JOINERY",
     image: "/wooden-joists-beams.jpg",
-    badge: "OFFER ENDS MIDNIGHT 27TH OCTOBER",
+    badge: "OFFER ENDS MIDNIGHT ",
   },
   {
     id: 3,
     title: "BLACK PAINTED",
     subtitle: "FEATHEREDGE",
     image: "/stainless-steel-fasteners.jpg",
-    badge: "OFFER ENDS MIDNIGHT 27TH OCTOBER",
+    badge: "OFFER ENDS MIDNIGHT ",
   },
 ]
 
