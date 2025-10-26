@@ -270,10 +270,17 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance">Need a Custom Quote?</h2>
-          <p className="text-lg mb-8 opacity-95 text-balance">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <img
+          src="/beautiful-wooden-deck-construction.jpg"
+          alt="Custom deck background"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-primary/70" />
+
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-balance text-white">Need a Custom Quote?</h2>
+          <p className="text-lg mb-8 text-white/95 text-balance">
             Get personalized recommendations and pricing for your specific project needs.
           </p>
           <Link href="/contact">
