@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ImageUpload } from "@/components/image-upload"
 
 const categories = ["Decking Materials", "Fasteners", "Tools", "Finishing", "Safety"]
 
@@ -38,7 +39,7 @@ export default function EditProductPage() {
     category: product?.category || "Decking Materials",
     price: product?.price || 0,
     stock: product?.stock || 0,
-    image: product?.image || "",
+    images: product?.images || [],
     description: product?.description || "",
   })
 
@@ -50,7 +51,7 @@ export default function EditProductPage() {
         category: product.category,
         price: product.price,
         stock: product.stock,
-        image: product.image,
+        images: product.images || [],
         description: product.description,
       })
     }
@@ -155,12 +156,40 @@ export default function EditProductPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Image URL</label>
-              <Input
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="/path/to/image.jpg"
+              <label className="text-sm font-medium">Product Images</label>
+              {/* Image uploader using blob to get public URLs */}
+              <ImageUpload
+                onImagesUploaded={(urls) =>
+                  setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }))
+                }
+                maxImages={5}
               />
+
+              {formData.images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                  {formData.images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image || "/placeholder.svg"}
+                        alt={`Product image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            images: prev.images.filter((_, i) => i !== index),
+                          }))
+                        }
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

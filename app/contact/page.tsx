@@ -56,8 +56,12 @@ export default function ContactPage() {
       <Header />
 
       {/* Page Header */}
-      <section className="bg-primary text-primary-foreground py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="relative bg-primary text-primary-foreground py-12 bg-cover bg-center"
+        style={{ backgroundImage: "url('/premium-quality-materials-timber-decking.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-primary/70"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold mb-2">Contact Us</h1>
           <p className="text-lg opacity-90">Get in touch with our team for quotes and support</p>
         </div>

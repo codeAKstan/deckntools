@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, category, price, stock, image, description } = body;
+    const { name, category, price, stock, images, description } = body;
     
     // Validate required fields
     if (!name || !category || price === undefined) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       category,
       price,
       stock: stock || 0,
-      image: image || '/placeholder.svg',
+      images: Array.isArray(images) && images.length > 0 ? images : ['/placeholder.svg'],
       description: description || '',
     });
     

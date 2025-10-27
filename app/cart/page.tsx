@@ -20,8 +20,12 @@ export default function CartPage() {
       <Header />
 
       {/* Page Header */}
-      <section className="bg-primary text-primary-foreground py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="relative bg-primary text-primary-foreground py-12 bg-cover bg-center"
+        style={{ backgroundImage: "url('/fast-shipping-delivery-truck-logistics.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-primary/70"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold">Shopping Cart</h1>
         </div>
       </section>

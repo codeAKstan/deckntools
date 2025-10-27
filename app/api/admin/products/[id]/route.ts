@@ -5,10 +5,10 @@ import Product from '@/models/Product';
 // GET a single product
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
     await connectToDatabase();
     
     const product = await Product.findById(id);
@@ -26,10 +26,10 @@ export async function GET(
 // PUT update a product
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
     const body = await request.json();
     
     await connectToDatabase();
@@ -54,10 +54,10 @@ export async function PUT(
 // DELETE a product
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await context.params;
     await connectToDatabase();
     
     const deletedProduct = await Product.findByIdAndDelete(id);

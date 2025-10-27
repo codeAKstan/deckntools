@@ -253,8 +253,14 @@ export default function ProductsPage() {
       <Header />
 
       {/* Page Header */}
-      <section className="bg-primary text-primary-foreground py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="bg-primary text-primary-foreground py-12 bg-cover bg-center relative"
+        style={{
+          backgroundImage: "url(/premium-quality-materials-timber-decking.jpg)",
+        }}
+      >
+        <div className="absolute inset-0 bg-primary/70"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <h1 className="text-4xl font-bold mb-2">Products</h1>
           <p className="text-lg opacity-90">Browse our complete selection of decking materials and tools</p>
         </div>
