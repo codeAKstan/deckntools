@@ -9,40 +9,14 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ReviewsPreview } from "@/components/reviews-preview"
 
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Premium Composite Decking Boards",
-    price: 45.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Decking Materials",
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    name: "Pressure-Treated Joists (2x8x12)",
-    price: 28.5,
-    image: "/wooden-joists-beams.jpg",
-    category: "Decking Materials",
-    rating: 4.6,
-  },
-  {
-    id: 3,
-    name: "Stainless Steel Deck Screws (5lb)",
-    price: 34.99,
-    image: "/stainless-steel-fasteners.jpg",
-    category: "Fasteners",
-    rating: 4.9,
-  },
-  {
-    id: 4,
-    name: "Professional Circular Saw",
-    price: 189.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.7,
-  },
-]
+type FeaturedProduct = {
+  id: number
+  name: string
+  price: number
+  image: string
+  category: string
+  rating: number
+}
 
 const heroSlides = [
   {
@@ -94,12 +68,39 @@ const showcaseCards = [
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
     }, 5000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Load first 4 products from database for featured section
+  useEffect(() => {
+    const loadFeatured = async () => {
+      try {
+        const res = await fetch('/api/admin/products')
+        if (!res.ok) return
+        const data = await res.json()
+        const mapped: FeaturedProduct[] = (Array.isArray(data) ? data : [])
+          .slice(0, 4)
+          .map((p: any, i: number) => ({
+            id: i + 1,
+            name: p.name,
+            price: p.price,
+            image: (p.images && p.images[0]) || '/placeholder.svg',
+            category: p.category,
+            rating: 4.8,
+          }))
+        setFeaturedProducts(mapped)
+      } catch (e) {
+        // silently ignore and keep empty
+      }
+    }
+
+    loadFeatured()
   }, [])
 
   const nextSlide = () => {
