@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
@@ -10,6 +11,9 @@ import { ChevronDown } from "lucide-react"
 // Products are loaded from the database via /api/admin/products
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams()
+  const rawSearch = (searchParams.get("search") || "").trim()
+  const normalizedSearch = rawSearch.toLowerCase()
   const [selectedCategory, setSelectedCategory] = useState("All Products")
   const [sortBy, setSortBy] = useState("featured")
   const [priceRange, setPriceRange] = useState([0, 300])
@@ -53,6 +57,14 @@ export default function ProductsPage() {
 
   const filteredProducts = useMemo(() => {
     let filtered = products
+
+    // Text search from header
+    if (normalizedSearch.length > 0) {
+      filtered = filtered.filter((p) =>
+        p.name.toLowerCase().includes(normalizedSearch) ||
+        p.category.toLowerCase().includes(normalizedSearch)
+      )
+    }
 
     // Filter by category
     if (selectedCategory !== "All Products") {
@@ -168,7 +180,13 @@ export default function ProductsPage() {
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-8">
               <p className="text-muted-foreground">
-                {isLoading ? 'Loading products…' : error ? `Error: ${error}` : `Showing ${filteredProducts.length} products`}
+                {isLoading
+                  ? 'Loading products…'
+                  : error
+                  ? `Error: ${error}`
+                  : normalizedSearch
+                  ? `Showing ${filteredProducts.length} results for "${rawSearch}"`
+                  : `Showing ${filteredProducts.length} products`}
               </p>
               <div className="flex gap-4 items-center">
                 <select
