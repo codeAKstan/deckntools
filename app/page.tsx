@@ -10,7 +10,7 @@ import { Footer } from "@/components/footer"
 import { ReviewsPreview } from "@/components/reviews-preview"
 
 type FeaturedProduct = {
-  id: number
+  id: string
   name: string
   price: number
   image: string
@@ -86,8 +86,8 @@ export default function Home() {
         const data = await res.json()
         const mapped: FeaturedProduct[] = (Array.isArray(data) ? data : [])
           .slice(0, 4)
-          .map((p: any, i: number) => ({
-            id: i + 1,
+          .map((p: any) => ({
+            id: String(p._id ?? p.id ?? ''),
             name: p.name,
             price: p.price,
             image: (p.images && p.images[0]) || '/placeholder.svg',

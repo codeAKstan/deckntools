@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export interface CartItem {
-  id: number
+  id: string
   name: string
   price: number
   quantity: number
@@ -12,8 +12,8 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[]
   addItem: (item: Omit<CartItem, "quantity">) => void
-  removeItem: (id: number) => void
-  updateQuantity: (id: number, quantity: number) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   getTotalPrice: () => number
   getTotalItems: () => number
@@ -25,13 +25,14 @@ export const useCart = create<CartStore>()(
       items: [],
       addItem: (item) =>
         set((state) => {
-          const existingItem = state.items.find((i) => i.id === item.id)
+          const normalizedId = String(item.id)
+          const existingItem = state.items.find((i) => i.id === normalizedId)
           if (existingItem) {
             return {
-              items: state.items.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i)),
+              items: state.items.map((i) => (i.id === normalizedId ? { ...i, quantity: i.quantity + 1 } : i)),
             }
           }
-          return { items: [...state.items, { ...item, quantity: 1 }] }
+          return { items: [...state.items, { ...item, id: normalizedId, quantity: 1 }] }
         }),
       removeItem: (id) =>
         set((state) => ({

@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Star } from "lucide-react"
 import { useCart } from "@/hooks/use-cart"
+import Link from "next/link"
 
 interface Product {
-  id: number
+  id: string | number
   name: string
   price: number
   image: string
@@ -27,18 +28,22 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition">
-      <div className="relative overflow-hidden bg-muted h-48">
-        <img
-          src={product.image || "/placeholder.svg"}
-          alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition duration-300"
-        />
-        <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-          {product.category}
+      <Link href={`/products/${product.id}`} className="block">
+        <div className="relative overflow-hidden bg-muted h-48">
+          <img
+            src={product.image || "/placeholder.svg"}
+            alt={product.name}
+            className="w-full h-full object-cover hover:scale-105 transition duration-300"
+          />
+          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+            {product.category}
+          </div>
         </div>
-      </div>
+      </Link>
       <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
+        <Link href={`/products/${product.id}`} className="block">
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
+        </Link>
         <div className="flex items-center gap-1 mb-3">
           <div className="flex">
             {[...Array(5)].map((_, i) => (
