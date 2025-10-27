@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useAdminProducts } from "@/hooks/use-admin-products"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Trash2, Edit, Plus, Search } from "lucide-react"
+import { Trash2, Edit, Plus, Search, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +18,12 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function AdminProductsPage() {
-  const { products, deleteProduct } = useAdminProducts()
+  const { products, deleteProduct, fetchProducts, isLoading, error } = useAdminProducts()
   const [searchTerm, setSearchTerm] = useState("")
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
 
   const filteredProducts = products.filter(
     (product) =>
@@ -61,75 +65,79 @@ export default function AdminProductsPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 font-medium">Category</th>
-                  <th className="text-left py-3 px-4 font-medium">Price</th>
-                  <th className="text-left py-3 px-4 font-medium">Stock</th>
-                  <th className="text-left py-3 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4">
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.description}</p>
-                    </td>
-                    <td className="py-3 px-4">{product.category}</td>
-                    <td className="py-3 px-4 font-medium">£{product.price.toFixed(2)}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          product.stock > 50
-                            ? "bg-green-100 text-green-800"
-                            : product.stock > 20
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {product.stock} units
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Link href={`/admin/products/${product.id}`}>
-                          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </Button>
-                        </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" className="gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{product.name}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                            <div className="flex gap-3 justify-end">
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteProduct(product.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </div>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </td>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading products...</span>
+              </div>
+            ) : error ? (
+              <div className="py-4 text-center text-red">
+                Error loading products: {error}
+              </div>
+            ) : (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-3 px-4 text-left">Name</th>
+                    <th className="py-3 px-4 text-left">Category</th>
+                    <th className="py-3 px-4 text-left">Price</th>
+                    <th className="py-3 px-4 text-left">Stock</th>
+                    <th className="py-3 px-4 text-left">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                        No products found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((product) => (
+                      <tr key={product._id} className="border-b">
+                        <td className="py-3 px-4">{product.name}</td>
+                        <td className="py-3 px-4">{product.category}</td>
+                        <td className="py-3 px-4">£{product.price.toFixed(2)}</td>
+                        <td className="py-3 px-4">{product.stock}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            <Link href={`/admin/products/${product._id}`}>
+                              <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            </Link>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="h-8 w-8 p-0 border-red text-red hover:bg-red hover:text-white">
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the product "{product.name}". This action cannot be undone.
+                                </AlertDialogDescription>
+                                <div className="flex justify-end gap-2 mt-4">
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteProduct(product._id)}
+                                    className="bg-red text-white hover:bg-red/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </div>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </CardContent>
       </Card>

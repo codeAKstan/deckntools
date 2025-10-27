@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export interface AdminProduct {
-  id: number
+  _id: string
   name: string
   category: string
   price: number
@@ -13,59 +13,111 @@ export interface AdminProduct {
 
 interface AdminProductStore {
   products: AdminProduct[]
-  addProduct: (product: Omit<AdminProduct, "id">) => void
-  updateProduct: (id: number, product: Partial<AdminProduct>) => void
-  deleteProduct: (id: number) => void
-  getProduct: (id: number) => AdminProduct | undefined
+  isLoading: boolean
+  error: string | null
+  fetchProducts: () => Promise<void>
+  addProduct: (product: Omit<AdminProduct, "_id">) => Promise<void>
+  updateProduct: (id: string, product: Partial<AdminProduct>) => Promise<void>
+  deleteProduct: (id: string) => Promise<void>
+  getProduct: (id: string) => AdminProduct | undefined
 }
 
 export const useAdminProducts = create<AdminProductStore>()(
   persist(
     (set, get) => ({
-      products: [
-        {
-          id: 1,
-          name: "Composite Decking Boards",
-          category: "Decking Materials",
-          price: 45.99,
-          stock: 150,
-          image: "/composite-decking-boards.jpg",
-          description: "Premium composite decking boards with UV protection",
-        },
-        {
-          id: 2,
-          name: "Wooden Joists & Beams",
-          category: "Decking Materials",
-          price: 89.99,
-          stock: 80,
-          image: "/wooden-joists-beams.jpg",
-          description: "High-quality timber joists and beams for structural support",
-        },
-        {
-          id: 3,
-          name: "Stainless Steel Fasteners",
-          category: "Fasteners",
-          price: 12.99,
-          stock: 500,
-          image: "/stainless-steel-fasteners.jpg",
-          description: "Corrosion-resistant stainless steel fasteners",
-        },
-      ],
-      addProduct: (product) =>
-        set((state) => ({
-          products: [...state.products, { ...product, id: Math.max(...state.products.map((p) => p.id), 0) + 1 }],
-        })),
-      updateProduct: (id, updates) =>
-        set((state) => ({
-          products: state.products.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-        })),
-      deleteProduct: (id) =>
-        set((state) => ({
-          products: state.products.filter((p) => p.id !== id),
-        })),
+      products: [],
+      isLoading: false,
+      error: null,
+      
+      fetchProducts: async () => {
+        try {
+          set({ isLoading: true, error: null })
+          const response = await fetch('/api/admin/products')
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch products')
+          }
+          
+          const data = await response.json()
+          set({ products: data, isLoading: false })
+        } catch (error) {
+          console.error('Error fetching products:', error)
+          set({ error: error instanceof Error ? error.message : 'An error occurred', isLoading: false })
+        }
+      },
+      
+      addProduct: async (product) => {
+        try {
+          set({ isLoading: true, error: null })
+          const response = await fetch('/api/admin/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+          })
+          
+          if (!response.ok) {
+            throw new Error('Failed to add product')
+          }
+          
+          const newProduct = await response.json()
+          set((state) => ({ 
+            products: [...state.products, newProduct],
+            isLoading: false 
+          }))
+        } catch (error) {
+          console.error('Error adding product:', error)
+          set({ error: error instanceof Error ? error.message : 'An error occurred', isLoading: false })
+        }
+      },
+      
+      updateProduct: async (id, updates) => {
+        try {
+          set({ isLoading: true, error: null })
+          const response = await fetch(`/api/admin/products/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+          })
+          
+          if (!response.ok) {
+            throw new Error('Failed to update product')
+          }
+          
+          const updatedProduct = await response.json()
+          set((state) => ({
+            products: state.products.map((p) => (p._id === id ? updatedProduct : p)),
+            isLoading: false
+          }))
+        } catch (error) {
+          console.error('Error updating product:', error)
+          set({ error: error instanceof Error ? error.message : 'An error occurred', isLoading: false })
+        }
+      },
+      
+      deleteProduct: async (id) => {
+        try {
+          set({ isLoading: true, error: null })
+          const response = await fetch(`/api/admin/products/${id}`, {
+            method: 'DELETE'
+          })
+          
+          if (!response.ok) {
+            throw new Error('Failed to delete product')
+          }
+          
+          set((state) => ({
+            products: state.products.filter((p) => p._id !== id),
+            isLoading: false
+          }))
+        } catch (error) {
+          console.error('Error deleting product:', error)
+          set({ error: error instanceof Error ? error.message : 'An error occurred', isLoading: false })
+        }
+      },
+      
       getProduct: (id) => {
         const state = get()
-        return state.products.find((p) => p.id === id)
+        return state.products.find((p) => p._id === id)
       },
     }),
     {

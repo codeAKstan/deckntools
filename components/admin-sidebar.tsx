@@ -68,7 +68,7 @@ export function AdminSidebar() {
               window.location.href = "/admin/login"
             }}
             variant="outline"
-            className="w-full justify-start gap-2 text-white border-white/20 hover:bg-white/10"
+            className="w-full justify-start gap-2 text-white bg-red border-white/20 hover:bg-red"
           >
             <LogOut className="h-4 w-4" />
             Logout
