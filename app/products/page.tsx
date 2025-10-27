@@ -1,232 +1,58 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 
-const allProducts = [
-  // Decking Materials
-  {
-    id: 1,
-    name: "Premium Composite Decking Boards",
-    price: 45.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Decking Materials",
-    rating: 4.8,
-    description: "Weather-resistant composite boards, 25-year warranty",
-  },
-  {
-    id: 2,
-    name: "Pressure-Treated Joists (2x8x12)",
-    price: 28.5,
-    image: "/wooden-joists-beams.jpg",
-    category: "Decking Materials",
-    rating: 4.6,
-    description: "Durable pressure-treated lumber for deck support",
-  },
-  {
-    id: 3,
-    name: "Cedar Decking Boards (1x6x12)",
-    price: 52.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Decking Materials",
-    rating: 4.7,
-    description: "Premium natural cedar with beautiful grain",
-  },
-  {
-    id: 4,
-    name: "PVC Decking Boards",
-    price: 62.5,
-    image: "/composite-decking-boards.jpg",
-    category: "Decking Materials",
-    rating: 4.9,
-    description: "Maintenance-free PVC boards, 30-year lifespan",
-  },
-  {
-    id: 5,
-    name: "Galvanized Steel Posts",
-    price: 35.99,
-    image: "/wooden-joists-beams.jpg",
-    category: "Decking Materials",
-    rating: 4.5,
-    description: "Corrosion-resistant steel posts for deck foundations",
-  },
-  {
-    id: 6,
-    name: "Concrete Mix (80lb Bag)",
-    price: 8.99,
-    image: "/wooden-joists-beams.jpg",
-    category: "Decking Materials",
-    rating: 4.4,
-    description: "High-strength concrete for post footings",
-  },
-
-  // Fasteners
-  {
-    id: 7,
-    name: "Stainless Steel Deck Screws (5lb)",
-    price: 34.99,
-    image: "/stainless-steel-fasteners.jpg",
-    category: "Fasteners",
-    rating: 4.9,
-    description: "Corrosion-resistant screws, 2.5 inch length",
-  },
-  {
-    id: 8,
-    name: "Hot-Dipped Galvanized Nails (10lb)",
-    price: 22.5,
-    image: "/stainless-steel-fasteners.jpg",
-    category: "Fasteners",
-    rating: 4.6,
-    description: "Heavy-duty galvanized nails for outdoor use",
-  },
-  {
-    id: 9,
-    name: "Deck Clips and Brackets (100 pack)",
-    price: 45.0,
-    image: "/stainless-steel-fasteners.jpg",
-    category: "Fasteners",
-    rating: 4.7,
-    description: "Hidden fastening system for seamless decks",
-  },
-  {
-    id: 10,
-    name: "Stainless Steel Bolts Assortment",
-    price: 28.99,
-    image: "/stainless-steel-fasteners.jpg",
-    category: "Fasteners",
-    rating: 4.5,
-    description: "Complete assortment of bolts and washers",
-  },
-
-  // Tools
-  {
-    id: 11,
-    name: "Professional Circular Saw",
-    price: 189.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.7,
-    description: "7.25 inch blade, 15 amp motor, laser guide",
-  },
-  {
-    id: 12,
-    name: "Cordless Power Drill (20V)",
-    price: 129.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.8,
-    description: "Compact drill with 2 batteries and charger",
-  },
-  {
-    id: 13,
-    name: "Compound Mitre Saw",
-    price: 249.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.9,
-    description: "12 inch blade, dual laser, precision cuts",
-  },
-  {
-    id: 14,
-    name: "Measuring Tape (25ft)",
-    price: 12.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.6,
-    description: "Magnetic tape with auto-lock feature",
-  },
-  {
-    id: 15,
-    name: "Spirit Level (48 inch)",
-    price: 34.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.7,
-    description: "Professional grade with shock-resistant frame",
-  },
-  {
-    id: 16,
-    name: "Post Hole Digger",
-    price: 45.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Tools",
-    rating: 4.5,
-    description: "Manual auger for deck post holes",
-  },
-
-  // Finishing
-  {
-    id: 17,
-    name: "Deck Stain (5 gallon)",
-    price: 89.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Finishing",
-    rating: 4.8,
-    description: "Semi-transparent stain, UV protection",
-  },
-  {
-    id: 18,
-    name: "Deck Sealant (1 gallon)",
-    price: 54.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Finishing",
-    rating: 4.7,
-    description: "Water-based sealant, eco-friendly formula",
-  },
-  {
-    id: 19,
-    name: "Deck Oil (5 gallon)",
-    price: 79.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Finishing",
-    rating: 4.6,
-    description: "Natural oil finish for wood decks",
-  },
-  {
-    id: 20,
-    name: "Deck Cleaner Concentrate",
-    price: 24.99,
-    image: "/composite-decking-boards.jpg",
-    category: "Finishing",
-    rating: 4.5,
-    description: "Biodegradable cleaner, makes 5 gallons",
-  },
-
-  // Safety
-  {
-    id: 21,
-    name: "Safety Gear Bundle",
-    price: 49.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Safety",
-    rating: 4.8,
-    description: "Gloves, goggles, ear protection, dust mask",
-  },
-  {
-    id: 22,
-    name: "Work Gloves (12 pair)",
-    price: 19.99,
-    image: "/circular-saw-power-tool.jpg",
-    category: "Safety",
-    rating: 4.6,
-    description: "Durable leather work gloves",
-  },
-]
-
-const categories = ["All Products", "Decking Materials", "Fasteners", "Tools", "Finishing", "Safety"]
+// Products are loaded from the database via /api/admin/products
 
 export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All Products")
   const [sortBy, setSortBy] = useState("featured")
   const [priceRange, setPriceRange] = useState([0, 300])
   const [showFilters, setShowFilters] = useState(false)
+  const [products, setProducts] = useState<Array<{ id: string; name: string; price: number; image: string; category: string; rating: number }>>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const res = await fetch('/api/admin/products')
+        if (!res.ok) throw new Error('Failed to fetch products')
+        const data = await res.json()
+        const mapped = (Array.isArray(data) ? data : []).map((p: any) => ({
+          id: String(p._id ?? p.id ?? ''),
+          name: p.name,
+          price: Number(p.price ?? 0),
+          image: Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '/placeholder.svg',
+          category: p.category ?? 'General',
+          rating: 4.6, // default rating since DB schema has no rating
+        }))
+        setProducts(mapped)
+      } catch (err) {
+        console.error('Error loading products:', err)
+        setError(err instanceof Error ? err.message : 'Error loading products')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadProducts()
+  }, [])
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(products.map((p) => p.category)))
+    return ['All Products', ...cats]
+  }, [products])
 
   const filteredProducts = useMemo(() => {
-    let filtered = allProducts
+    let filtered = products
 
     // Filter by category
     if (selectedCategory !== "All Products") {
@@ -246,7 +72,7 @@ export default function ProductsPage() {
     }
 
     return filtered
-  }, [selectedCategory, sortBy, priceRange])
+  }, [products, selectedCategory, sortBy, priceRange])
 
   return (
     <div className="min-h-screen bg-background">
@@ -341,7 +167,9 @@ export default function ProductsPage() {
           <div className="lg:col-span-3">
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-8">
-              <p className="text-muted-foreground">Showing {filteredProducts.length} products</p>
+              <p className="text-muted-foreground">
+                {isLoading ? 'Loading products…' : error ? `Error: ${error}` : `Showing ${filteredProducts.length} products`}
+              </p>
               <div className="flex gap-4 items-center">
                 <select
                   value={sortBy}
@@ -361,7 +189,11 @@ export default function ProductsPage() {
             </div>
 
             {/* Products Grid */}
-            {filteredProducts.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12">Loading products…</div>
+            ) : error ? (
+              <div className="text-center py-12 text-red">{error}</div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
