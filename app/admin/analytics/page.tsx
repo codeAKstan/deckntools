@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   LineChart,
@@ -15,82 +15,164 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ScatterChart,
-  Scatter,
 } from "recharts"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TrendingUp, TrendingDown, ShoppingCart } from "lucide-react"
-
-// Mock analytics data
-const dailyRevenueData = [
-  { date: "Oct 1", revenue: 2400, orders: 24, customers: 12 },
-  { date: "Oct 2", revenue: 1398, orders: 18, customers: 8 },
-  { date: "Oct 3", revenue: 9800, orders: 39, customers: 20 },
-  { date: "Oct 4", revenue: 3908, orders: 28, customers: 15 },
-  { date: "Oct 5", revenue: 4800, orders: 35, customers: 18 },
-  { date: "Oct 6", revenue: 3800, orders: 25, customers: 12 },
-  { date: "Oct 7", revenue: 4300, orders: 32, customers: 16 },
-]
-
-const productPerformanceData = [
-  { name: "Composite Decking", sales: 4200, revenue: 192780 },
-  { name: "Wooden Joists", sales: 2800, revenue: 252072 },
-  { name: "Fasteners", sales: 6500, revenue: 84435 },
-  { name: "Tools", sales: 1200, revenue: 48000 },
-  { name: "Finishing", sales: 900, revenue: 27000 },
-]
-
-const conversionData = [
-  { visitors: 100, conversions: 8 },
-  { visitors: 200, conversions: 15 },
-  { visitors: 300, conversions: 22 },
-  { visitors: 400, conversions: 28 },
-  { visitors: 500, conversions: 35 },
-  { visitors: 600, conversions: 42 },
-  { visitors: 700, conversions: 48 },
-]
-
-const topProductsData = [
-  { rank: 1, name: "Composite Decking Boards", units: 450, revenue: 20695.5 },
-  { rank: 2, name: "Wooden Joists & Beams", units: 312, revenue: 28071.88 },
-  { rank: 3, name: "Stainless Steel Fasteners", units: 1200, revenue: 15588 },
-  { rank: 4, name: "Power Drill Kit", units: 85, revenue: 4250 },
-  { rank: 5, name: "Wood Stain Finish", units: 120, revenue: 3600 },
-]
-
 export default function AdminAnalyticsPage() {
   const [timeRange, setTimeRange] = useState("7days")
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch('/api/orders', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to fetch orders')
+        const data = await res.json()
+        setOrders(Array.isArray(data) ? data : [])
+      } catch (e: any) {
+        setError(e.message || 'Error fetching orders')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadOrders()
+  }, [])
+
+  const rangeDays = useMemo(() => {
+    switch (timeRange) {
+      case '7days': return 7
+      case '30days': return 30
+      case '90days': return 90
+      case '1year': return 365
+      default: return 7
+    }
+  }, [timeRange])
+
+  const now = new Date()
+  const startOfRange = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  startOfRange.setDate(startOfRange.getDate() - (rangeDays - 1))
+
+  const inRange = (dateStr: string | Date | undefined) => {
+    if (!dateStr) return false
+    const d = new Date(dateStr)
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    return day >= startOfRange && day <= now
+  }
+
+  const ordersInRange = useMemo(() => orders.filter(o => inRange(o.createdAt)), [orders, rangeDays])
+
+  const previousStart = new Date(startOfRange)
+  previousStart.setDate(previousStart.getDate() - rangeDays)
+  const previousEnd = new Date(startOfRange)
+  previousEnd.setDate(previousEnd.getDate() - 1)
+
+  const inPrevRange = (dateStr: string | Date | undefined) => {
+    if (!dateStr) return false
+    const d = new Date(dateStr)
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    return day >= previousStart && day <= previousEnd
+  }
+
+  const ordersPrevRange = useMemo(() => orders.filter(o => inPrevRange(o.createdAt)), [orders, rangeDays])
+
+  const totalRevenue = useMemo(() => ordersInRange.reduce((sum, o) => sum + Number(o.amount || 0), 0), [ordersInRange])
+  const totalOrders = ordersInRange.length
+  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+  const uniqueCustomers = useMemo(() => new Set(ordersInRange.map(o => o.email)).size, [ordersInRange])
+
+  const prevRevenue = useMemo(() => ordersPrevRange.reduce((sum, o) => sum + Number(o.amount || 0), 0), [ordersPrevRange])
+  const prevOrders = ordersPrevRange.length
+  const prevAOV = prevOrders > 0 ? prevRevenue / prevOrders : 0
+
+  const pctChange = (current: number, prev: number) => {
+    if (prev === 0) return current > 0 ? 100 : 0
+    return ((current - prev) / prev) * 100
+  }
 
   const metrics = [
     {
       title: "Total Revenue",
-      value: "£30,408",
-      change: "+12.5%",
-      trend: "up",
+      value: `£${totalRevenue.toFixed(2)}`,
+      change: `${pctChange(totalRevenue, prevRevenue).toFixed(1)}%`,
+      trend: totalRevenue >= prevRevenue ? "up" : "down",
       icon: TrendingUp,
     },
     {
       title: "Total Orders",
-      value: "201",
-      change: "+8.2%",
-      trend: "up",
+      value: String(totalOrders),
+      change: `${pctChange(totalOrders, prevOrders).toFixed(1)}%`,
+      trend: totalOrders >= prevOrders ? "up" : "down",
       icon: ShoppingCart,
     },
     {
-      title: "Conversion Rate",
-      value: "6.8%",
-      change: "+2.1%",
+      title: "New Customers",
+      value: String(uniqueCustomers),
+      change: "",
       trend: "up",
       icon: TrendingUp,
     },
     {
       title: "Avg. Order Value",
-      value: "£151.28",
-      change: "-1.3%",
-      trend: "down",
+      value: `£${avgOrderValue.toFixed(2)}`,
+      change: `${pctChange(avgOrderValue, prevAOV).toFixed(1)}%`,
+      trend: avgOrderValue >= prevAOV ? "up" : "down",
       icon: TrendingDown,
     },
   ]
+
+  const dailyRevenueData = useMemo(() => {
+    const map: Record<string, { date: string, revenue: number, orders: number, customers: number }> = {}
+    for (let i = 0; i < rangeDays; i++) {
+      const d = new Date(startOfRange)
+      d.setDate(startOfRange.getDate() + i)
+      const key = d.toISOString().slice(0,10)
+      map[key] = { date: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), revenue: 0, orders: 0, customers: 0 }
+    }
+    const customersByDay: Record<string, Set<string>> = {}
+    ordersInRange.forEach(o => {
+      const d = new Date(o.createdAt)
+      const key = d.toISOString().slice(0,10)
+      if (!map[key]) return
+      map[key].revenue += Number(o.amount || 0)
+      map[key].orders += 1
+      customersByDay[key] = customersByDay[key] || new Set<string>()
+      customersByDay[key].add(String(o.email || ''))
+    })
+    Object.keys(map).forEach(k => {
+      map[k].customers = customersByDay[k]?.size || 0
+    })
+    return Object.keys(map).sort().map(k => map[k])
+  }, [ordersInRange, rangeDays])
+
+  const productPerformanceData = useMemo(() => {
+    const perf: Record<string, { name: string, sales: number, revenue: number }> = {}
+    ordersInRange.forEach(o => {
+      (o.items || []).forEach((it: any) => {
+        const name = String(it.name || 'Unknown')
+        const qty = Number(it.quantity || 0)
+        const revenue = Number(it.price || 0) * qty
+        if (!perf[name]) perf[name] = { name, sales: 0, revenue: 0 }
+        perf[name].sales += qty
+        perf[name].revenue += revenue
+      })
+    })
+    return Object.values(perf).sort((a, b) => b.revenue - a.revenue).slice(0, 12)
+  }, [ordersInRange])
+
+  const topProductsData = useMemo(() => {
+    const total = productPerformanceData.reduce((sum, p) => sum + p.revenue, 0)
+    return productPerformanceData.slice(0, 5).map((p, idx) => ({
+      rank: idx + 1,
+      name: p.name,
+      units: p.sales,
+      revenue: p.revenue,
+      pct: total > 0 ? (p.revenue / total) * 100 : 0,
+    }))
+  }, [productPerformanceData])
 
   return (
     <div className="space-y-8">
@@ -112,6 +194,13 @@ export default function AdminAnalyticsPage() {
         </Select>
       </div>
 
+      {loading && (
+        <Card><CardContent className="pt-6"><p className="text-muted-foreground">Loading analytics…</p></CardContent></Card>
+      )}
+      {error && (
+        <Card><CardContent className="pt-6"><p className="text-destructive">{error}</p></CardContent></Card>
+      )}
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric) => {
@@ -123,9 +212,11 @@ export default function AdminAnalyticsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">{metric.title}</p>
                     <p className="text-2xl font-bold mt-2">{metric.value}</p>
-                    <p className={`text-xs mt-1 ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                      {metric.change} from previous period
-                    </p>
+                    {metric.change !== "" && (
+                      <p className={`text-xs mt-1 ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}>
+                        {metric.change} from previous period
+                      </p>
+                    )}
                   </div>
                   <div className={`${metric.trend === "up" ? "bg-green-100" : "bg-red-100"} p-3 rounded-lg`}>
                     <Icon className={`h-6 w-6 ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`} />
@@ -185,25 +276,6 @@ export default function AdminAnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Visitor to Conversion */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Visitor Conversion Funnel</CardTitle>
-            <CardDescription>Relationship between visitors and conversions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="visitors" name="Visitors" />
-                <YAxis dataKey="conversions" name="Conversions" />
-                <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-                <Scatter name="Conversion Rate" data={conversionData} fill="#E67E22" />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
         {/* Orders Trend */}
         <Card>
           <CardHeader>
@@ -245,26 +317,22 @@ export default function AdminAnalyticsPage() {
                 </tr>
               </thead>
               <tbody>
-                {topProductsData.map((product, index) => {
-                  const totalRevenue = topProductsData.reduce((sum, p) => sum + p.revenue, 0)
-                  const percentage = ((product.revenue / totalRevenue) * 100).toFixed(1)
-                  return (
-                    <tr key={product.rank} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="py-3 px-4 font-medium">#{product.rank}</td>
-                      <td className="py-3 px-4">{product.name}</td>
-                      <td className="py-3 px-4">{product.units}</td>
-                      <td className="py-3 px-4 font-medium">£{product.revenue.toFixed(2)}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-muted rounded-full h-2">
-                            <div className="bg-secondary h-2 rounded-full" style={{ width: `${percentage}%` }} />
-                          </div>
-                          <span className="text-sm font-medium">{percentage}%</span>
+                {topProductsData.map((product, index) => (
+                  <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
+                    <td className="py-3 px-4 font-medium">#{product.rank}</td>
+                    <td className="py-3 px-4">{product.name}</td>
+                    <td className="py-3 px-4">{product.units}</td>
+                    <td className="py-3 px-4 font-medium">£{product.revenue.toFixed(2)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-muted rounded-full h-2">
+                          <div className="bg-secondary h-2 rounded-full" style={{ width: `${product.pct.toFixed(1)}%` }} />
                         </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                        <span className="text-sm font-medium">{product.pct.toFixed(1)}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
