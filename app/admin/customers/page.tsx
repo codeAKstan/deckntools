@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useAdminCustomers } from "@/hooks/use-admin-customers"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,9 +9,46 @@ import { Eye, Search } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function AdminCustomersPage() {
-  const { customers } = useAdminCustomers()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/orders', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to fetch orders')
+        const data = await res.json()
+        setOrders(data)
+      } catch (e) {
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const customers = useMemo(() => {
+    const map = new Map<string, any>()
+    for (const o of orders) {
+      const email = o.email
+      const name = `${o.firstName} ${o.lastName}`.trim()
+      const city = o.city
+      const amount = o.amount || 0
+      const status = 'active'
+      const key = email
+      if (!map.has(key)) {
+        map.set(key, { id: key, name, email, city, totalOrders: 0, totalSpent: 0, status })
+      }
+      const c = map.get(key)!
+      c.totalOrders += 1
+      c.totalSpent += amount
+    }
+    return Array.from(map.values())
+  }, [orders])
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
@@ -92,7 +128,7 @@ export default function AdminCustomersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Customer List</CardTitle>
-          <CardDescription>{filteredCustomers.length} customers found</CardDescription>
+          <CardDescription>{loading ? 'Loading...' : `${filteredCustomers.length} customers found`}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -105,7 +141,6 @@ export default function AdminCustomersPage() {
                   <th className="text-left py-3 px-4 font-medium">Orders</th>
                   <th className="text-left py-3 px-4 font-medium">Total Spent</th>
                   <th className="text-left py-3 px-4 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,14 +159,6 @@ export default function AdminCustomersPage() {
                       >
                         {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
                       </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Link href={`/admin/customers/${customer.id}`}>
-                        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Button>
-                      </Link>
                     </td>
                   </tr>
                 ))}

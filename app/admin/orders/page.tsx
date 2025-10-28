@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useAdminOrders } from "@/hooks/use-admin-orders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,18 +9,45 @@ import { Eye, Search } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function AdminOrdersPage() {
-  const { orders } = useAdminOrders()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const filteredOrders = orders.filter((order) => {
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/orders', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to fetch orders')
+        const data = await res.json()
+        setOrders(data)
+      } catch (e) {
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const formattedOrders = useMemo(() => orders.map((o) => ({
+    id: o.orderId,
+    customer: `${o.firstName} ${o.lastName}`.trim(),
+    email: o.email,
+    amount: Number(o.amount || 0),
+    status: o.status || 'processing',
+    date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '',
+  })), [orders])
+
+  const filteredOrders = useMemo(() => formattedOrders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || order.status === statusFilter
     return matchesSearch && matchesStatus
-  })
+  }), [formattedOrders, searchTerm, statusFilter])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -77,7 +103,7 @@ export default function AdminOrdersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Order List</CardTitle>
-          <CardDescription>{filteredOrders.length} orders found</CardDescription>
+          <CardDescription>{loading ? 'Loading...' : `${filteredOrders.length} orders found`}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

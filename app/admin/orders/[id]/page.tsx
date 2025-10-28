@@ -1,7 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useAdminOrders } from "@/hooks/use-admin-orders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,8 +11,25 @@ export default function OrderDetailPage() {
   const router = useRouter()
   const params = useParams()
   const orderId = params.id as string
-  const { getOrder, updateOrderStatus } = useAdminOrders()
-  const order = getOrder(orderId)
+  const [order, setOrder] = useState<any | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/orders?orderId=${encodeURIComponent(orderId)}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error('Order not found')
+        const data = await res.json()
+        setOrder(data)
+      } catch (e) {
+        setOrder(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (orderId) load()
+  }, [orderId])
 
   if (!order) {
     return (
@@ -23,7 +40,7 @@ export default function OrderDetailPage() {
         </Button>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Order not found</p>
+            <p className="text-center text-muted-foreground">{loading ? 'Loading order...' : 'Order not found'}</p>
           </CardContent>
         </Card>
       </div>
@@ -61,8 +78,8 @@ export default function OrderDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>{order.id}</CardTitle>
-                  <CardDescription>{order.date}</CardDescription>
+                  <CardTitle>{order.orderId}</CardTitle>
+                  <CardDescription>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</CardDescription>
                 </div>
                 <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
                   {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -74,7 +91,7 @@ export default function OrderDetailPage() {
               <div>
                 <h3 className="font-semibold mb-3">Customer Information</h3>
                 <div className="space-y-2">
-                  <p className="text-sm">{order.customer}</p>
+                  <p className="text-sm">{`${order.firstName} ${order.lastName}`}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4" />
                     {order.email}
@@ -100,7 +117,7 @@ export default function OrderDetailPage() {
               <div>
                 <h3 className="font-semibold mb-3">Order Items</h3>
                 <div className="space-y-2">
-                  {order.items.map((item, index) => (
+                  {order.items?.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between text-sm p-2 bg-muted rounded">
                       <div>
                         <p className="font-medium">{item.name}</p>
@@ -109,14 +126,14 @@ export default function OrderDetailPage() {
                       <p className="font-medium">£{(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
-                </div>
+              </div>
               </div>
 
               {/* Order Total */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
                   <p className="font-semibold">Total Amount</p>
-                  <p className="text-2xl font-bold">£{order.amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">£{Number(order.amount || 0).toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -130,7 +147,23 @@ export default function OrderDetailPage() {
             <CardDescription>Change order status</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Select value={order.status} onValueChange={(status) => updateOrderStatus(order.id, status as any)}>
+            <Select
+              value={order.status}
+              onValueChange={async (status) => {
+                try {
+                  const res = await fetch('/api/orders', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: order.orderId, status }),
+                  })
+                  if (!res.ok) throw new Error('Update failed')
+                  const data = await res.json()
+                  setOrder(data)
+                } catch (e) {
+                  // silently ignore for now
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -146,7 +179,7 @@ export default function OrderDetailPage() {
             <div className="bg-muted p-4 rounded-lg">
               <p className="text-sm font-medium mb-2">Status Timeline</p>
               <div className="space-y-2 text-xs text-muted-foreground">
-                <p>• Order placed: {order.date}</p>
+                <p>• Order placed: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</p>
                 <p>• Current status: {order.status}</p>
                 <p>• Last updated: Today</p>
               </div>
