@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   BarChart,
@@ -15,62 +16,123 @@ import {
   Cell,
 } from "recharts"
 import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react"
-
-// Mock data
-const revenueData = [
-  { month: "Jan", revenue: 4000, orders: 24 },
-  { month: "Feb", revenue: 3000, orders: 18 },
-  { month: "Mar", revenue: 2000, orders: 12 },
-  { month: "Apr", revenue: 2780, orders: 39 },
-  { month: "May", revenue: 1890, orders: 28 },
-  { month: "Jun", revenue: 2390, orders: 35 },
-]
-
-const categoryData = [
-  { name: "Decking Materials", value: 45, fill: "#4B3B2A" },
-  { name: "Tools", value: 25, fill: "#2F5233" },
-  { name: "Fasteners", value: 20, fill: "#E67E22" },
-  { name: "Other", value: 10, fill: "#F9F9F9" },
-]
-
-const metrics = [
-  {
-    title: "Total Revenue",
-    value: "£14,060",
-    change: "+12.5%",
-    icon: DollarSign,
-    color: "bg-secondary",
-  },
-  {
-    title: "Total Orders",
-    value: "156",
-    change: "+8.2%",
-    icon: ShoppingCart,
-    color: "bg-accent",
-  },
-  {
-    title: "Total Customers",
-    value: "89",
-    change: "+5.1%",
-    icon: Users,
-    color: "bg-primary",
-  },
-  {
-    title: "Growth Rate",
-    value: "23.5%",
-    change: "+4.3%",
-    icon: TrendingUp,
-    color: "bg-secondary",
-  },
-]
+const COLORS = ["#4B3B2A", "#2F5233", "#E67E22", "#8E44AD", "#16A085", "#C0392B", "#2980B9"]
 
 export default function AdminDashboard() {
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch('/api/orders', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to fetch orders')
+        const data = await res.json()
+        setOrders(Array.isArray(data) ? data : [])
+      } catch (e: any) {
+        setError(e.message || 'Error fetching orders')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + Number(o.amount || 0), 0), [orders])
+  const totalOrders = orders.length
+  const totalCustomers = useMemo(() => new Set(orders.map((o) => o.email)).size, [orders])
+
+  // Current vs previous month revenue change
+  const now = new Date()
+  const currMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+
+  const inMonth = (d: Date, start: Date, end: Date) => d >= start && d <= end
+  const revenueCurrentMonth = orders.reduce((sum, o) => {
+    const d = new Date(o.createdAt)
+    return inMonth(d, currMonthStart, now) ? sum + Number(o.amount || 0) : sum
+  }, 0)
+  const revenuePreviousMonth = orders.reduce((sum, o) => {
+    const d = new Date(o.createdAt)
+    return inMonth(d, prevMonthStart, prevMonthEnd) ? sum + Number(o.amount || 0) : sum
+  }, 0)
+  const pctChange = (current: number, prev: number) => {
+    if (prev === 0) return current > 0 ? 100 : 0
+    return ((current - prev) / prev) * 100
+  }
+  const revenueChange = pctChange(revenueCurrentMonth, revenuePreviousMonth)
+
+  const metrics = [
+    { title: "Total Revenue", value: `£${totalRevenue.toFixed(2)}`, change: `${revenueChange.toFixed(1)}%`, icon: DollarSign, color: "bg-secondary" },
+    { title: "Total Orders", value: String(totalOrders), change: "", icon: ShoppingCart, color: "bg-accent" },
+    { title: "Total Customers", value: String(totalCustomers), change: "", icon: Users, color: "bg-primary" },
+    { title: "Growth Rate", value: `${revenueChange.toFixed(1)}%`, change: "", icon: TrendingUp, color: "bg-secondary" },
+  ]
+
+  // Last 6 months revenue and orders
+  const revenueData = useMemo(() => {
+    const arr: { month: string; revenue: number; orders: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
+      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      let revenue = 0
+      let ordersCount = 0
+      for (const o of orders) {
+        const od = new Date(o.createdAt)
+        if (od >= monthStart && od <= monthEnd) {
+          revenue += Number(o.amount || 0)
+          ordersCount += 1
+        }
+      }
+      const monthLabel = d.toLocaleString(undefined, { month: 'short' })
+      arr.push({ month: monthLabel, revenue, orders: ordersCount })
+    }
+    return arr
+  }, [orders])
+
+  // Product revenue share (top 6)
+  const categoryData = useMemo(() => {
+    const revenueByProduct: Record<string, number> = {}
+    for (const o of orders) {
+      for (const it of o.items || []) {
+        const name = String(it.name || 'Unknown')
+        const rev = Number(it.price || 0) * Number(it.quantity || 0)
+        revenueByProduct[name] = (revenueByProduct[name] || 0) + rev
+      }
+    }
+    const entries = Object.entries(revenueByProduct).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    const total = entries.reduce((sum, [, v]) => sum + v, 0)
+    return entries.map(([name, v], idx) => ({ name, value: total > 0 ? Math.round((v / total) * 100) : 0, fill: COLORS[idx % COLORS.length] }))
+  }, [orders])
+
+  const recentOrders = useMemo(() => {
+    return [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4).map((o: any) => ({
+      id: o.orderId,
+      customer: `${o.firstName} ${o.lastName}`.trim(),
+      amount: `£${Number(o.amount || 0).toFixed(2)}`,
+      status: o.status || 'processing',
+      date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '',
+    }))
+  }, [orders])
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back! Here's your business overview.</p>
       </div>
+
+      {loading && (
+        <Card><CardContent className="pt-6"><p className="text-muted-foreground">Loading dashboard…</p></CardContent></Card>
+      )}
+      {error && (
+        <Card><CardContent className="pt-6"><p className="text-destructive">{error}</p></CardContent></Card>
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -83,7 +145,9 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground">{metric.title}</p>
                     <p className="text-2xl font-bold mt-2">{metric.value}</p>
-                    <p className="text-xs text-green-600 mt-1">{metric.change} from last month</p>
+                    {metric.change && (
+                      <p className="text-xs text-green-600 mt-1">{metric.change} from last month</p>
+                    )}
                   </div>
                   <div className={`${metric.color} p-3 rounded-lg`}>
                     <Icon className="h-6 w-6 text-white" />
@@ -155,12 +219,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { id: "ORD-001", customer: "John Smith", amount: "£450", status: "Completed", date: "2025-10-24" },
-              { id: "ORD-002", customer: "Sarah Johnson", amount: "£320", status: "Processing", date: "2025-10-23" },
-              { id: "ORD-003", customer: "Mike Davis", amount: "£680", status: "Shipped", date: "2025-10-22" },
-              { id: "ORD-004", customer: "Emma Wilson", amount: "£245", status: "Pending", date: "2025-10-21" },
-            ].map((order) => (
+            {recentOrders.map((order) => (
               <div
                 key={order.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -173,13 +232,15 @@ export default function AdminDashboard() {
                   <p className="font-medium">{order.amount}</p>
                   <p
                     className={`text-xs font-medium ${
-                      order.status === "Completed"
+                      order.status === "delivered"
                         ? "text-green-600"
-                        : order.status === "Processing"
+                        : order.status === "processing"
                           ? "text-blue-600"
-                          : order.status === "Shipped"
+                          : order.status === "shipped"
                             ? "text-purple-600"
-                            : "text-yellow-600"
+                            : order.status === "pending"
+                              ? "text-yellow-600"
+                              : "text-red-600"
                     }`}
                   >
                     {order.status}
