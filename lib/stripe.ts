@@ -1,5 +1,15 @@
 import Stripe from "stripe"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-11-20",
-})
+let stripeInstance: Stripe | null = null
+
+export function getStripe(): Stripe | null {
+  if (stripeInstance) return stripeInstance
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    return null
+  }
+  stripeInstance = new Stripe(key, {
+    apiVersion: "2024-11-20",
+  })
+  return stripeInstance
+}
