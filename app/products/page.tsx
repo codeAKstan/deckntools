@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { Suspense, useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -10,7 +10,7 @@ import { ChevronDown } from "lucide-react"
 
 // Products are loaded from the database via /api/admin/products
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
   const rawSearch = (searchParams.get("search") || "").trim()
   const normalizedSearch = rawSearch.toLowerCase()
@@ -87,25 +87,8 @@ export default function ProductsPage() {
   }, [products, selectedCategory, sortBy, priceRange])
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      {/* Page Header */}
-      <section
-        className="bg-primary text-primary-foreground py-12 bg-cover bg-center relative"
-        style={{
-          backgroundImage: "url(/premium-quality-materials-timber-decking.jpg)",
-        }}
-      >
-        <div className="absolute inset-0 bg-primary/70"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <h1 className="text-4xl font-bold mb-2">Products</h1>
-          <p className="text-lg opacity-90">Browse our complete selection of decking materials and tools</p>
-        </div>
-      </section>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-4 gap-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="grid lg:grid-cols-4 gap-8">
           {/* Sidebar Filters */}
           <div className={`lg:block ${showFilters ? "block" : "hidden"}`}>
             <div className="bg-card border border-border rounded-lg p-6 sticky top-24">
@@ -223,8 +206,33 @@ export default function ProductsPage() {
               </div>
             )}
           </div>
-        </div>
       </div>
+    </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      {/* Page Header */}
+      <section
+        className="bg-primary text-primary-foreground py-12 bg-cover bg-center relative"
+        style={{
+          backgroundImage: "url(/premium-quality-materials-timber-decking.jpg)",
+        }}
+      >
+        <div className="absolute inset-0 bg-primary/70"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <h1 className="text-4xl font-bold mb-2">Products</h1>
+          <p className="text-lg opacity-90">Browse our complete selection of decking materials and tools</p>
+        </div>
+      </section>
+
+      <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">Loading products…</div>}>
+        <ProductsContent />
+      </Suspense>
 
       <Footer />
     </div>
