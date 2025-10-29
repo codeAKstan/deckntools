@@ -103,7 +103,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
 
       {/* Page Header */}
@@ -256,20 +256,20 @@ export default function CheckoutPage() {
 
               {/* Navigation Buttons */}
               <div className="flex flex-col gap-4">
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
                   {step > 1 && (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setStep(step - 1)}
-                      className="bg-transparent"
+                      className="bg-transparent w-full sm:w-auto"
                       disabled={isLoading}
                     >
                       Back
                     </Button>
                   )}
                   {step === 1 && (
-                    <Button type="submit" className="flex-1 gap-2" disabled={isLoading}>
+                    <Button type="submit" className="w-full sm:flex-1 gap-2" disabled={isLoading}>
                       Continue
                       <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -281,7 +281,7 @@ export default function CheckoutPage() {
                         variant="default"
                         onClick={handleBankTransferPay}
                         disabled={isLoading}
-                        className="flex-1"
+                        className="w-full sm:flex-1"
                       >
                         {isLoading ? (
                           <>
@@ -297,7 +297,7 @@ export default function CheckoutPage() {
                         variant="secondary"
                         onClick={handleStripePay}
                         disabled={isLoading}
-                        className="flex-1"
+                        className="w-full sm:flex-1"
                       >
                         {isLoading ? (
                           <>
@@ -399,7 +399,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-card border border-border rounded-lg p-6 sticky top-24">
+            <div className="bg-card border border-border rounded-lg p-6 lg:sticky lg:top-24">
               <h3 className="font-bold text-lg mb-6">Order Summary</h3>
               <div className="space-y-3 mb-6 pb-6 border-b border-border max-h-64 overflow-y-auto">
                 {items.map((item) => (
