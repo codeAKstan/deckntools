@@ -2,13 +2,16 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react"
 
 export default function ContactPage() {
+  const [contact, setContact] = useState<{ phoneNumber: string; email: string; address: string } | null>(null)
+  const [contactLoading, setContactLoading] = useState(true)
+  const [contactError, setContactError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +23,24 @@ export default function ContactPage() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchContact = async () => {
+      try {
+        setContactLoading(true)
+        const res = await fetch('/api/admin/contact', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to load contact details')
+        const data = await res.json()
+        setContact(data || null)
+        setContactError(null)
+      } catch (e: any) {
+        setContactError(e.message || 'Failed to load contact details')
+      } finally {
+        setContactLoading(false)
+      }
+    }
+    fetchContact()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -79,7 +100,9 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                  <p className="text-muted-foreground">+44 (0) 123 456 7890</p>
+                  <p className="text-muted-foreground">
+                    {contactLoading ? 'Loading…' : (contact?.phoneNumber || '+44 (0) 123 456 7890')}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-2">Mon-Fri, 9am-5pm GMT</p>
                 </div>
               </div>
@@ -93,7 +116,9 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Email</h3>
-                  <p className="text-muted-foreground">info@deckmaterials.co.uk</p>
+                  <p className="text-muted-foreground">
+                    {contactLoading ? 'Loading…' : (contact?.email || 'info@deckmaterials.co.uk')}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-2">We respond within 24 hours</p>
                 </div>
               </div>
@@ -107,11 +132,13 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Address</h3>
-                  <p className="text-muted-foreground">
-                    123 Trade Street
-                    <br />
-                    London, UK
-                  </p>
+                  {contactLoading ? (
+                    <p className="text-muted-foreground">Loading…</p>
+                  ) : (
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {(contact?.address || '123 Trade Street\nLondon, UK')}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -279,6 +306,12 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
+
+        {contactError && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700">{contactError}</p>
+          </div>
+        )}
 
         {/* FAQ Section */}
         <div className="mt-16">
