@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { bankName, accountHolderName, accountNumber, bankAddress } = body
+    const { bankName, accountHolderName, accountNumber, bankAddress, swiftCode, routingNumber } = body
 
     if (!bankName || !accountHolderName || !accountNumber || !bankAddress) {
       return NextResponse.json(
@@ -29,9 +29,13 @@ export async function POST(request: NextRequest) {
 
     await connectToDatabase()
 
+    const update: Record<string, any> = { bankName, accountHolderName, accountNumber, bankAddress }
+    if (typeof swiftCode !== 'undefined') update.swiftCode = swiftCode
+    if (typeof routingNumber !== 'undefined') update.routingNumber = routingNumber
+
     const result = await Bank.findOneAndUpdate(
       {},
-      { bankName, accountHolderName, accountNumber, bankAddress },
+      update,
       { upsert: true, new: true, setDefaultsOnInsert: true }
     )
 

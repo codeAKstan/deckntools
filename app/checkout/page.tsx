@@ -77,7 +77,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const copyToClipboard = async (text: string, key: 'account' | 'address') => {
+  const copyToClipboard = async (text: string, key: 'account' | 'address' | 'swift' | 'routing') => {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(key)
@@ -339,6 +339,42 @@ export default function CheckoutPage() {
                             <span className="text-xs text-muted-foreground">Copied</span>
                           )}
                         </p>
+                        {bank.swiftCode && (
+                          <p className="mb-2 flex items-center gap-2">
+                            <span className="text-muted-foreground">Swift Code:</span>
+                            <span className="font-medium">{bank.swiftCode}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label="Copy swift code"
+                              onClick={() => copyToClipboard(bank.swiftCode, 'swift')}
+                            >
+                              <Copy />
+                            </Button>
+                            {copied === 'swift' && (
+                              <span className="text-xs text-muted-foreground">Copied</span>
+                            )}
+                          </p>
+                        )}
+                        {bank.routingNumber && (
+                          <p className="mb-2 flex items-center gap-2">
+                            <span className="text-muted-foreground">Routing Number:</span>
+                            <span className="font-medium">{bank.routingNumber}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label="Copy routing number"
+                              onClick={() => copyToClipboard(bank.routingNumber, 'routing')}
+                            >
+                              <Copy />
+                            </Button>
+                            {copied === 'routing' && (
+                              <span className="text-xs text-muted-foreground">Copied</span>
+                            )}
+                          </p>
+                        )}
                         <p className="mb-2 flex items-center gap-2">
                           <span className="text-muted-foreground">Address:</span>
                           <span className="font-medium">{bank.bankAddress}</span>

@@ -12,6 +12,8 @@ type BankDetails = {
   accountHolderName: string
   accountNumber: string
   bankAddress: string
+  swiftCode?: string
+  routingNumber?: string
 }
 
 export default function AdminBankPage() {
@@ -20,6 +22,8 @@ export default function AdminBankPage() {
     accountHolderName: "",
     accountNumber: "",
     bankAddress: "",
+    swiftCode: "",
+    routingNumber: "",
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -41,6 +45,8 @@ export default function AdminBankPage() {
             accountHolderName: data.accountHolderName || "",
             accountNumber: data.accountNumber || "",
             bankAddress: data.bankAddress || "",
+            swiftCode: data.swiftCode || "",
+            routingNumber: data.routingNumber || "",
           })
           setBank(data)
           setEditing(false)
@@ -100,7 +106,7 @@ export default function AdminBankPage() {
         throw new Error(err.error || 'Failed to delete bank details')
       }
       setBank(null)
-      setForm({ bankName: '', accountHolderName: '', accountNumber: '', bankAddress: '' })
+      setForm({ bankName: '', accountHolderName: '', accountNumber: '', bankAddress: '', swiftCode: '', routingNumber: '' })
       setSuccess('Bank details deleted')
       setEditing(true)
     } catch (e: any) {
@@ -111,6 +117,12 @@ export default function AdminBankPage() {
   }
 
   const maskAccount = (num: string) => {
+    if (!num) return ''
+    const last4 = num.slice(-4)
+    return `*****${last4}`
+  }
+
+  const maskRouting = (num: string) => {
     if (!num) return ''
     const last4 = num.slice(-4)
     return `*****${last4}`
@@ -150,6 +162,12 @@ export default function AdminBankPage() {
                 <p className="mb-2"><span className="text-muted-foreground">Bank Name:</span> <span className="font-medium">{bank.bankName}</span></p>
                 <p className="mb-2"><span className="text-muted-foreground">Account Holder:</span> <span className="font-medium">{bank.accountHolderName}</span></p>
                 <p className="mb-2"><span className="text-muted-foreground">Account Number:</span> <span className="font-medium">{maskAccount(bank.accountNumber)}</span></p>
+                {bank.swiftCode && (
+                  <p className="mb-2"><span className="text-muted-foreground">Swift Code:</span> <span className="font-medium">{bank.swiftCode}</span></p>
+                )}
+                {bank.routingNumber && (
+                  <p className="mb-2"><span className="text-muted-foreground">Routing Number:</span> <span className="font-medium">{maskRouting(bank.routingNumber)}</span></p>
+                )}
                 <p className="mb-2"><span className="text-muted-foreground">Address:</span> <span className="font-medium">{bank.bankAddress}</span></p>
               </div>
               <div>
@@ -173,6 +191,14 @@ export default function AdminBankPage() {
                   <Label htmlFor="accountNumber">Account Number</Label>
                   <Input id="accountNumber" name="accountNumber" value={form.accountNumber} onChange={onChange} placeholder="e.g. 1234567890" required />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="swiftCode">Swift Code (optional)</Label>
+                  <Input id="swiftCode" name="swiftCode" value={form.swiftCode || ''} onChange={onChange} placeholder="e.g. ABCDGB2L" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="routingNumber">Routing Number (optional)</Label>
+                  <Input id="routingNumber" name="routingNumber" value={form.routingNumber || ''} onChange={onChange} placeholder="e.g. 110000000" />
+                </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="bankAddress">Bank Address</Label>
                   <Textarea id="bankAddress" name="bankAddress" value={form.bankAddress} onChange={onChange} placeholder="Street, City, State, ZIP" rows={3} required />
@@ -190,6 +216,8 @@ export default function AdminBankPage() {
                     accountHolderName: bank.accountHolderName || '',
                     accountNumber: bank.accountNumber || '',
                     bankAddress: bank.bankAddress || '',
+                    swiftCode: bank.swiftCode || '',
+                    routingNumber: bank.routingNumber || '',
                   }) }}>Cancel</Button>
                 )}
               </CardFooter>
