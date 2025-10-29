@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, Menu, Banknote } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, LogOut, Menu, Banknote, Phone } from "lucide-react"
 import { useState } from "react"
 
 const menuItems = [
@@ -14,6 +14,7 @@ const menuItems = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/bank", label: "Bank", icon: Banknote },
+  { href: "/admin/contact", label: "Contact", icon: Phone },
 ]
 
 export function AdminSidebar() {
