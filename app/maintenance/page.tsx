@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 export default function MaintenancePage() {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* <Header /> */}
 
       <section
         className="relative bg-primary text-primary-foreground py-12 bg-cover bg-center"
@@ -32,7 +32,7 @@ export default function MaintenancePage() {
         </div>
       </div>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   )
 }
